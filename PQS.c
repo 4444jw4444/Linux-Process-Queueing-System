@@ -10,7 +10,12 @@ typedef struct _customer{
 	int id;
 	int priority;
 	int arrivalTime; 
-  int serviceTime; 
+  int serviceTime;
+  pthread_cond_t convar;
+  int arrived;
+  int running;
+  int waiting;
+  int finished; 
 }customer;
 
 /* customer function */
@@ -19,17 +24,18 @@ void *customer_function(void *ptr){
   //wait until arrival time has passed
 	sleep(cPtr->arrivalTime);
   //state that the customer has arrived
-  printf("customer %2d arrives: arrivale time (%d), service time (%d), priority (%2d)\n", cPtr->id, cPtr->arrivalTime, cPtr->serviceTime, cPtr->priority);
+  printf("customer %2d arrives: arrival time (%d), service time (%d), priority (%2d)\n", cPtr->id, cPtr->arrivalTime, cPtr->serviceTime, cPtr->priority);
   //signal the clerk that this thread has arrived. Pass the id of the customer.
   //wait for a signal from the clerk saying that its turn has come
   //run until signalled to stop by the clerk or run out of time
     //if signalled to stop, got to above step where we were waiting
     //if run out of time, signal clerk that I am done
   //thread kill
+  pthread_exit();
 }
 
 /* clerk function */
-void *clerk_function(void *threadArray, void *customerArray){
+void *clerk_function(void *customerArray){
   //waits (sleep, or convar, or mutex) until a customer signals arrival with id. Most likely a convar.
   //(A): if there is no currently running customer (running bool) then immediately signal start the newly arrived process
   //if there is a customer running (as noted by a running bool), then it is the highest priority of waiting and running customers so check if the newly arrived process is higher
@@ -44,6 +50,8 @@ void *clerk_function(void *threadArray, void *customerArray){
   //wait for the running customer to signal completion
   //set running bool to false;
   //if another customer arrives, then go back to (A)
+  //thread kill
+  pthread_kill();
 }
 
 int main(int argc, char* argv[])
@@ -78,9 +86,10 @@ int main(int argc, char* argv[])
   
   //create the arrays of threads and customers based on num
   customer cusArray[num]; //customer array
-	pthread_t thrdArray[num]; //thread array
+	pthread_t thrdArray[num + 1]; //thread array
   
-  //get each line of the input file and create a thread based on it. 
+  //get each line of the input file and create a thread based on it.
+  //initialize all of the threads with their properties 
   for (i = 0; fgets(line, sizeof(line), fp); ++i) {  
     char *pChr = strtok(line, ":,");
     int j;
@@ -99,26 +108,38 @@ int main(int argc, char* argv[])
       }
       pChr = strtok(NULL, ":,");
     }
+    cusArray[i].convar = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
+    cusArray[i].arrived = 0;
+    cusArray[i].running = 0;
+    cusArray[i].waiting = 0;
+    cusArray[i].finished = 0;
 	  if ((rc = pthread_create(&thrdArray[i], NULL, customer_function, &cusArray[i]))) {
       fprintf(stderr, "error: pthread_create, rc: %d\n", rc);
       return EXIT_FAILURE;
 	  }
   }
   
-  //create the clerk thread and pass in the clerks attributes and data structures
-  //Clerk is joined to the customers, so only dies when they all die.
-//  if ((rc = pthread_create(&thrdArray[i], NULL, customer_function, &cusArray[i]))) {
-//      fprintf(stderr, "error: pthread_create, rc: %d\n", rc);
-//      return EXIT_FAILURE;
-//	  }
-//     
   //close the file
   fclose(fp);
+  
+  //create the clerk thread and pass in the clerks attributes and data structures
+  //Clerk is joined to the customers, so only dies when they all die.
+  if ((rc = pthread_create(&thrdArray[num - 1], NULL, clerk_function, cusArray))) {
+      fprintf(stderr, "error: pthread_create, rc: %d\n", rc);
+      return EXIT_FAILURE;
+  }
+  
+  //get the clerk to run until all the customers are done
+//  int k;
+//  for(k = 0; k < num -1; k++){
+//    pthread_join(thrdArray[k], NULL);
+//  }
 	
 	// block until all threads complete 
-//	for (i = 0; i < num; ++i) {
-//		pthread_join(thrdArray[i], NULL);
-//	}
+  for (i = 0; i < num; ++i) {
+		pthread_join(thrdArray[i], NULL);
+	}
+ 
 	sleep(15);//wait for customers leaving
 	return EXIT_SUCCESS;
 }
