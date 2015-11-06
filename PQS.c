@@ -30,8 +30,9 @@ void *customer_function(void *ptr){
   //run until signalled to stop by the clerk or run out of time
     //if signalled to stop, got to above step where we were waiting
     //if run out of time, signal clerk that I am done
-  //thread kill
-  pthread_exit();
+  //thread kill with wait to make sure prints happen
+  sleep(1);
+  pthread_exit(NULL);
 }
 
 /* clerk function */
@@ -50,14 +51,15 @@ void *clerk_function(void *customerArray){
   //wait for the running customer to signal completion
   //set running bool to false;
   //if another customer arrives, then go back to (A)
-  //thread kill
-  pthread_kill();
+  //thread kill with wait to make sure that prints happen
+  sleep(1);
+  pthread_exit(NULL);
 }
 
 int main(int argc, char* argv[])
 {
 	int num; //customer number
-	int i, rc, randNo;
+	int i, rc;
  
  //variables needed to read in the customers.txt file
  char ch;
@@ -128,19 +130,13 @@ int main(int argc, char* argv[])
       fprintf(stderr, "error: pthread_create, rc: %d\n", rc);
       return EXIT_FAILURE;
   }
-  
-  //get the clerk to run until all the customers are done
-//  int k;
-//  for(k = 0; k < num -1; k++){
-//    pthread_join(thrdArray[k], NULL);
-//  }
 	
 	// block until all threads complete 
-  for (i = 0; i < num; ++i) {
-		pthread_join(thrdArray[i], NULL);
+  int j;
+  for (j = 0; j < num + 1; ++j) {
+		pthread_join(thrdArray[j], NULL);
 	}
- 
-	sleep(15);//wait for customers leaving
+  //sleep();
 	return EXIT_SUCCESS;
 }
 
