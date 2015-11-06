@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <unistd.h>  //intptr_t
 #include <time.h>
+#include <string.h>
 
 /* create thread argument struct for thr_func() */
 typedef struct _customer{
@@ -62,10 +63,27 @@ int main(int argc, char* argv[])
   for (i = 0; fgets(line, sizeof(line), fp); ++i) {
 //    int * attributes;
 //    attributes = createAttributes(line);
-    cusArray[i].id = line[0] - '0';
-	  cusArray[i].arrivalTime = line[2] - '0';
-    cusArray[i].serviceTime = (line[4] - '0')*10;
-    cusArray[i].priority = line[6] - '0';  
+//    cusArray[i].id = line[0] - '0';
+//	  cusArray[i].arrivalTime = line[2] - '0';
+//    cusArray[i].serviceTime = (line[4] - '0')*10;
+//    cusArray[i].priority = line[6] - '0';  
+    char *pChr = strtok(line, ":,");
+    int j;
+    for(j = 0; pChr != NULL; j++){
+      if(j == 0){
+        cusArray[i].id = atoi(pChr);
+      }
+      if(j == 1){
+        cusArray[i].arrivalTime = atoi(pChr);
+      }
+      if(j == 2){
+        cusArray[i].serviceTime = atoi(pChr);
+      }
+      if(j == 3){
+        cusArray[i].priority = atoi(pChr);
+      }
+      pChr = strtok(NULL, ":,");
+    }
 	  if ((rc = pthread_create(&thrdArray[i], NULL, print_function, &cusArray[i]))) {
       fprintf(stderr, "error: pthread_create, rc: %d\n", rc);
       return EXIT_FAILURE;
