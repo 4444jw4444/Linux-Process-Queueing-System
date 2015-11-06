@@ -13,13 +13,37 @@ typedef struct _customer{
   int serviceTime; 
 }customer;
 
-/* thread function */
-void *print_function(void *ptr){
+/* customer function */
+void *customer_function(void *ptr){
 	customer * cPtr = (customer *)ptr;
+  //wait until arrival time has passed
 	sleep(cPtr->arrivalTime);
-  printf("Customer %2d has arrived at %2d seconds\n", cPtr->id, cPtr->arrivalTime);
-  usleep(cPtr->serviceTime);
-  printf("Customer %2d has been serviced for %2d decisenconds\n", cPtr->id, cPtr->serviceTime);
+  //state that the customer has arrived
+  printf("customer %2d arrives: arrivale time (%d), service time (%d), priority (%2d)\n", cPtr->id, cPtr->arrivalTime, cPtr->serviceTime, cPtr->priority);
+  //signal the clerk that this thread has arrived. Pass the id of the customer.
+  //wait for a signal from the clerk saying that its turn has come
+  //run until signalled to stop by the clerk or run out of time
+    //if signalled to stop, got to above step where we were waiting
+    //if run out of time, signal clerk that I am done
+  //thread kill
+}
+
+/* clerk function */
+void *clerk_function(void *threadArray, void *customerArray){
+  //waits (sleep, or convar, or mutex) until a customer signals arrival with id. Most likely a convar.
+  //(A): if there is no currently running customer (running bool) then immediately signal start the newly arrived process
+  //if there is a customer running (as noted by a running bool), then it is the highest priority of waiting and running customers so check if the newly arrived process is higher
+    //if the new customer isn't higher, then add the customer to the waiting list
+      //print out that the customer was blocked
+    //if the new customer is higher, then signal stop to the currently running process and putting it back into the waiting list, and signal start to the new process.
+      //print out that the customer was interupted by a higher priority
+    //if there is a tie of priority give the priority to
+      //the one that arrived first
+      //then to the one with shortest service
+      //then lower id number (it is assumed that id numbers increased linearly and so customers earlier in the file have lower ids)
+  //wait for the running customer to signal completion
+  //set running bool to false;
+  //if another customer arrives, then go back to (A)
 }
 
 int main(int argc, char* argv[])
@@ -51,22 +75,13 @@ int main(int argc, char* argv[])
   //read the number of customers 
   num = fgetc(fp) - '0';
   fgetc(fp);
+  
   //create the arrays of threads and customers based on num
   customer cusArray[num]; //customer array
 	pthread_t thrdArray[num]; //thread array
   
-  //show the content of the file
-  printf("The contents of %s file are :\n", argv[1]);
-  printf("%d\n",num);
-  
   //get each line of the input file and create a thread based on it. 
-  for (i = 0; fgets(line, sizeof(line), fp); ++i) {
-//    int * attributes;
-//    attributes = createAttributes(line);
-//    cusArray[i].id = line[0] - '0';
-//	  cusArray[i].arrivalTime = line[2] - '0';
-//    cusArray[i].serviceTime = (line[4] - '0')*10;
-//    cusArray[i].priority = line[6] - '0';  
+  for (i = 0; fgets(line, sizeof(line), fp); ++i) {  
     char *pChr = strtok(line, ":,");
     int j;
     for(j = 0; pChr != NULL; j++){
@@ -84,12 +99,19 @@ int main(int argc, char* argv[])
       }
       pChr = strtok(NULL, ":,");
     }
-	  if ((rc = pthread_create(&thrdArray[i], NULL, print_function, &cusArray[i]))) {
+	  if ((rc = pthread_create(&thrdArray[i], NULL, customer_function, &cusArray[i]))) {
       fprintf(stderr, "error: pthread_create, rc: %d\n", rc);
       return EXIT_FAILURE;
 	  }
   }
-
+  
+  //create the clerk thread and pass in the clerks attributes and data structures
+  //Clerk is joined to the customers, so only dies when they all die.
+//  if ((rc = pthread_create(&thrdArray[i], NULL, customer_function, &cusArray[i]))) {
+//      fprintf(stderr, "error: pthread_create, rc: %d\n", rc);
+//      return EXIT_FAILURE;
+//	  }
+//     
   //close the file
   fclose(fp);
 	
@@ -97,7 +119,7 @@ int main(int argc, char* argv[])
 //	for (i = 0; i < num; ++i) {
 //		pthread_join(thrdArray[i], NULL);
 //	}
-	sleep(10);//wait for customers leaving
+	sleep(15);//wait for customers leaving
 	return EXIT_SUCCESS;
 }
 
