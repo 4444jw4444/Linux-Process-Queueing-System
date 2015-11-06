@@ -10,3 +10,7 @@ then the high priority customer gets serviced immediately and the low priority c
 
 To follow the progress of the clerk and customers, the program prints out event details as they occur.
 At end of the program running, the the main thread will exit after all customers will have arrived and then been served. 
+
+Inside the folder containing both the program and the filename.txt file which holds the customers in the correct form:
+To make this program type "make -f Makefile" into the terminal.
+To run this program type "./PQS filename.txt" into the terminal. 
