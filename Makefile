@@ -2,7 +2,7 @@
 all: PQS
 
 PQS: PQS.c
-	gcc PQS.c -lreadline -lhistory -ltermcap -pthread -o PQS
+	gcc PQS.c -lreadline -lhistory -ltermcap -pthread -O0 -g -o PQS
 
 .PHONY clean:
 clean:
