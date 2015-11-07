@@ -50,11 +50,12 @@ void *customer_function(void *ptr){
   //signal the clerk that this thread has arrived.
   pthread_cond_signal(&clerkConvar);
   //wait on this threads convar
+  //pthread_mutex_lock(&custSigLock);
   pthread_cond_wait(&cPtr->customerConvar, &custSigLock);
-  //TEST: print out that we recieved a message from the clerk
-  printf("Thread recieved message from clerk to begin running");
-  //immediately unlock garbage clerkLock
-  pthread_mutex_unlock(&clerkLock);
+//  //TEST: print out that we recieved a message from the clerk
+//  printf("Thread recieved message from clerk to begin running");
+//  //immediately unlock garbage clerkLock
+//  pthread_mutex_unlock(&clerkLock);
   //wait for a signal from the clerk saying that its turn has come
   //run until signalled to stop by the clerk or run out of time
     //if signalled to stop, got to above step where we were waiting
@@ -71,27 +72,27 @@ void *clerk_function(void* cA){
   //customerArray[i].arrivalTime, 
   //customerArray[i].serviceTime, 
   //customerArray[i].priority);
-  
+  printf("hello");
   //int processesCompleted = 0;
   //loop until all customers are finished
   //while(processesCompleted < num){
    //waits (sleep, or convar, or mutex) until a customer signals arrival. Most likely a convar.
-   pthread_cond_wait(&clerkConvar, &clerkLock);
+   //pthread_cond_wait(&clerkConvar, &clerkLock);
    printf("hello there");
    //A customer has arrived so now we need to check its properties
    //got through all the customer and check for the single one that has arrived
-   int signallingCustomerID = 0;
-   int runningCustomerID = 0;
-   int i;
-   for(i = 0; i < num; i++){
-     if(customerArray[i].running == 1){
-       runningCustomerID = customerArray[i].id;
-     }
-     if(customerArray[i].arrived == 1){
-       signallingCustomerID = customerArray[i].id;
-     }
-   }
-   printf("Here is the signalling id: %d", signallingCustomerID);
+//   int signallingCustomerID = 0;
+//   int runningCustomerID = 0;
+//   int i;
+//   for(i = 0; i < num; i++){
+//     if(customerArray[i].running == 1){
+//       runningCustomerID = customerArray[i].id;
+//     }
+//     if(customerArray[i].arrived == 1){
+//       signallingCustomerID = customerArray[i].id;
+//     }
+//   }
+//   printf("Here is the signalling id: %d", signallingCustomerID);
    //case 1: there is no running customer. Run the signalling customer
 
      //pthread_cond_signal(&customerArray[signallingCustomerID].customerConvar);
@@ -119,6 +120,7 @@ void *clerk_function(void* cA){
 
 int main(int argc, char* argv[])
 {
+printf("main done");
 	int i, rc;
  
  //variables needed to read in the customers.txt file
@@ -131,7 +133,7 @@ int main(int argc, char* argv[])
     perror("Error: Wrong number of arguments.\n");
     exit(EXIT_FAILURE);
    }  
- 
+    
  //try to read the file
   fp = fopen(argv[1],"r"); // read mode
   
@@ -173,7 +175,7 @@ int main(int argc, char* argv[])
     printf("\nmutex init failed\n");
     return 1;
   }
- 
+  
   //get each line of the input file and create a thread based on it.
   //initialize all of the threads with their properties 
   //lock the mutex during the init process
@@ -206,17 +208,18 @@ int main(int argc, char* argv[])
       return EXIT_FAILURE;
 	  }
   }
-  //unlock the init mutex for custArray
-	//pthread_mutex_unlock(&custArrayLock);
-  //close the file
-  fclose(fp);
-  
-  //create the clerk thread and pass in the clerks attributes and data structures
-  //Clerk is joined to the customers, so only dies when they all die.
+
+    //create the clerk thread and pass in the clerks attributes and data structures
   if ((rc = pthread_create(&thrdArray[num - 1], NULL, clerk_function, cusArray))) {
       fprintf(stderr, "error: pthread_create, rc: %d\n", rc);
       return EXIT_FAILURE;
   }
+  
+    //unlock the init mutex for custArray
+	//pthread_mutex_unlock(&custArrayLock);
+  //close the file
+  fclose(fp);
+  
 	// block until all threads complete 
   int j;
   for (j = 0; j < num + 1; ++j) {
