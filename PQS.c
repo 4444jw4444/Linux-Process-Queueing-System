@@ -4,6 +4,8 @@
 #include <unistd.h>  //intptr_t
 #include <time.h>
 #include <string.h>
+//the number of customers
+int num;
 
 /* create thread argument struct for thr_func() */
 typedef struct _customer{
@@ -36,7 +38,15 @@ void *customer_function(void *ptr){
 }
 
 /* clerk function */
-void *clerk_function(void *customerArray){
+void *clerk_function(void* cA){
+  customer * customerArray = (customer *)cA;
+  //TEST: print out all the attributes of the customers
+  int i;
+  //customerArray[i].id, 
+  //customerArray[i].arrivalTime, 
+  //customerArray[i].serviceTime, 
+  //customerArray[i].priority);
+  
   //waits (sleep, or convar, or mutex) until a customer signals arrival with id. Most likely a convar.
   //(A): if there is no currently running customer (running bool) then immediately signal start the newly arrived process
   //if there is a customer running (as noted by a running bool), then it is the highest priority of waiting and running customers so check if the newly arrived process is higher
@@ -58,7 +68,6 @@ void *clerk_function(void *customerArray){
 
 int main(int argc, char* argv[])
 {
-	int num; //customer number
 	int i, rc;
  
  //variables needed to read in the customers.txt file
@@ -88,7 +97,7 @@ int main(int argc, char* argv[])
   
   //create the arrays of threads and customers based on num
   customer cusArray[num]; //customer array
-	pthread_t thrdArray[num + 1]; //thread array
+	pthread_t thrdArray[num + 1]; //thread array with extra for the clerk (this is so we can get main to wait on all threads including clerk)
   
   //get each line of the input file and create a thread based on it.
   //initialize all of the threads with their properties 
@@ -136,6 +145,7 @@ int main(int argc, char* argv[])
   for (j = 0; j < num + 1; ++j) {
 		pthread_join(thrdArray[j], NULL);
 	}
+ 
   //sleep();
 	return EXIT_SUCCESS;
 }
